@@ -3,17 +3,18 @@
 use yii\db\Migration;
 
 /**
- * Handles the creation of table `{{%subscription}}`.
+ * Handles the creation of table `{{%author}}`.
  */
-class m251113_190020_create_subscription_table extends Migration
+class m251113_185838_create_author_table extends Migration
 {
     /**
      * {@inheritdoc}
      */
     public function safeUp()
     {
-        $this->createTable('{{%subscription}}', [
+        $this->createTable('{{%author}}', [
             'id' => $this->primaryKey(),
+            'fio' => $this->string(),
         ]);
     }
 
@@ -22,6 +23,6 @@ class m251113_190020_create_subscription_table extends Migration
      */
     public function safeDown()
     {
-        $this->dropTable('{{%subscription}}');
+        $this->dropTable('{{%author}}');
     }
 }
