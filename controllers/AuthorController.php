@@ -6,6 +6,7 @@ use app\models\Author;
 use app\models\Permissions;
 use app\models\TopForm;
 use app\services\Explorer;
+use app\services\Redis;
 use Yii;
 use yii\filters\AccessControl;
 use yii\web\Controller;
@@ -48,14 +49,21 @@ class AuthorController extends Controller {
     public function actionTop() {
         $topForm = new TopForm();
         $topForm->load(Yii::$app->request->post());
+        $year = $topForm->year;
 
-        return $this->render('top', [
-            'topForm' => $topForm,
-            'dataProvider' => Explorer::getTopAuthorsProvider($topForm->year)
-        ]);
+        $content = Redis::getAuthorTop($year);
+        if ($content === null) {
+            $content = $this->render('top', [
+                'topForm' => $topForm,
+                'dataProvider' => Explorer::getTopAuthorsProvider($year)
+            ]);
+            Redis::saveAuthorTop($year, $content);
+        }
+
+        return $content;
     }
 
-    public function actionView($id) {
+    public function actionView(int $id) {
         $author = $this->_findAuthor($id);
 
         return $this->render('view', [
@@ -70,7 +78,7 @@ class AuthorController extends Controller {
         ]);
     }
 
-    public function actionSubscribe($id) {
+    public function actionSubscribe(int $id) {
         $author = $this->_findAuthor($id);
         $currentUser = Yii::$app->user->identity;
         if (! $currentUser->hasSubscribed($author)) {
@@ -90,7 +98,7 @@ class AuthorController extends Controller {
         ]);
     }
 
-    public function actionEdit($id) {
+    public function actionEdit(int $id) {
         $author = $this->_findAuthor($id);
         if ($author->load(Yii::$app->request->post()) && $author->save()) {
             return $this->redirect(['author/view/' . $author->id]);
@@ -104,7 +112,7 @@ class AuthorController extends Controller {
         ]);
     }
 
-    public function actionDelete($id) {
+    public function actionDelete(int $id) {
         $author = $this->_findAuthor($id);
         if ($author->hasNoBooks()) {
             $isOk = $author->delete();
@@ -118,7 +126,7 @@ class AuthorController extends Controller {
         }
     }
 
-    protected function _findAuthor($id) {
+    protected function _findAuthor(int $id): ?Author {
         if (($author = Author::findOne($id)) !== null) {
             return $author;
         }
