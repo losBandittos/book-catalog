@@ -8,7 +8,7 @@ class Smspilot {
     const BASE_URL = 'https://smspilot.ru/api.php';
     const SUCCESS_STATUS = '0';
 
-    static function sendSms($phone, $text) {
+    static function sendSms(string $phone, string $text) {
         $params = [
             'format' => 'json',
             'apikey' => Yii::$app->params['smspilot_apikey'],
@@ -22,7 +22,7 @@ class Smspilot {
         return $response->send[0]->status === self::SUCCESS_STATUS;
     }
 
-    static private function _formatPhone($phone) {
+    static private function _formatPhone(string $phone) {
         return preg_replace('/[^0-9]+/', '', $phone);
     }
 }

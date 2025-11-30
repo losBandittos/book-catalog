@@ -30,7 +30,7 @@ class Author extends ActiveRecord {
             ->viaTable('author_book', ['author_id' => 'id']);
     }
 
-    public function hasNoBooks() {
+    public function hasNoBooks(): bool {
         return ((int)AuthorBook::find()->where(['author_id' => $this->id])->count()) === 0;
     }
 }

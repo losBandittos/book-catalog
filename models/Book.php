@@ -56,6 +56,7 @@ class Book extends ActiveRecord {
     }
 
     private function _linkAuthors() {
+        //TO_DO refactor without unlinkAll
         $this->_unlinkAuthors();
 
         $authorIds = explode(',', $this->author_ids);
@@ -76,7 +77,7 @@ class Book extends ActiveRecord {
             ->viaTable('author_book', ['book_id' => 'id']);
     }
 
-    public function getAuthorIds() {
+    public function getAuthorIds(): string {
         $authorIds = array_map(
             function ($author) {
                 return $author->id;
@@ -86,7 +87,7 @@ class Book extends ActiveRecord {
         return implode(', ', $authorIds);
     }
 
-    public function getAuthorFios() {
+    public function getAuthorFios(): string {
         $authorFios = array_map(
             function ($author) {
                 return $author->fio;
@@ -96,7 +97,7 @@ class Book extends ActiveRecord {
         return implode(', ', $authorFios);
     }
 
-    public function getAuthorLinks() {
+    public function getAuthorLinks(): string {
         $authorLinks = array_map(
             function ($author) {
                 return Html::a($author->fio, ['/author/view/' . $author->id], ['class' => 'btn']);

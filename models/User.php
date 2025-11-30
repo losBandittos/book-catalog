@@ -18,7 +18,7 @@ class User extends ActiveRecord implements IdentityInterface {
     const TYPE_GUEST = 'guest';
     const TYPE_USER = 'user';
 
-    public static function findIdentity($id) {
+    public static function findIdentity($id): ?self {
         return static::findOne(['id' => $id]);
     }
 
@@ -46,7 +46,7 @@ class User extends ActiveRecord implements IdentityInterface {
         return $this->phone;
     }
 
-    public static function getByPhone($phone) {
+    public static function getByPhone(string $phone): self {
         $existUser = static::findOne(['phone' => $phone]);
         if ($existUser === null) {
             $existUser = new static();
@@ -59,7 +59,7 @@ class User extends ActiveRecord implements IdentityInterface {
         return $existUser;
     }
 
-    public function validatePassword($password){
+    public function validatePassword($password): bool {
         return Yii::$app->security->validatePassword($password, $this->password_hash);
     }
 
@@ -77,20 +77,20 @@ class User extends ActiveRecord implements IdentityInterface {
         }
     }
 
-    public function isGuest() {
+    public function isGuest(): bool {
         return $this->type === self::TYPE_GUEST;
     }
 
-    public function isUser() {
+    public function isUser(): bool {
         return $this->type === self::TYPE_USER;
     }
 
-    public function hasSubscribed($author) {
-        return Subscription::findOne(['author_id' => $author->id, 'user_id' => $this->id]);
+    public function hasSubscribed(Author $author): bool {
+        return Subscription::find()->where(['author_id' => $author->id, 'user_id' => $this->id])->count() > 0;
     }
 
     public function getBookNotifications() {
         return $this->hasMany(Book::class, ['id' => 'book_id'])
-        ->viaTable('notification', ['user_id' => 'id']);
+            ->viaTable('notification', ['user_id' => 'id']);
     }
 }

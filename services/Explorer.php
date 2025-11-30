@@ -10,7 +10,7 @@ class Explorer {
     private const DEFAULT_PAGE_SIZE = 10;
     private const TOP_SIZE = 10;
 
-    static function getAllAuthorsProvider() {
+    static function getAllAuthorsProvider(): ActiveDataProvider {
         return new ActiveDataProvider([
             'query' => Author::find(),
             'pagination' => false,
@@ -22,7 +22,7 @@ class Explorer {
         ]);
     }
 
-    static function getTopAuthorsProvider($year) {
+    static function getTopAuthorsProvider(?int $year): ActiveDataProvider {
         $authorTable = Author::tableName();
         $authorBookTable = AuthorBook::tableName();
         $bookTable = Book::tableName();
@@ -43,7 +43,7 @@ class Explorer {
         ]);
     }
 
-    static function getAuthorsProvider() {
+    static function getAuthorsProvider(): ActiveDataProvider {
         return new ActiveDataProvider([
             'query' => Author::find(),
             'pagination' => [
@@ -57,7 +57,7 @@ class Explorer {
         ]);
     }
 
-    static function getBooksProvider() {
+    static function getBooksProvider(): ActiveDataProvider {
         return new ActiveDataProvider([
             'query' => Book::find(),
             'pagination' => [

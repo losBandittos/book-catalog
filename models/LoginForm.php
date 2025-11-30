@@ -43,7 +43,7 @@ class LoginForm extends Model {
         return false;
     }
 
-    public function getUser() {
+    public function getUser(): ?User {
         if ($this->_user === false) {
             $this->_user = User::getByPhone($this->phone);
         }
