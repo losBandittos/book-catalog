@@ -3,6 +3,7 @@
 namespace app\models;
 
 use app\services\NotificationCenter;
+use app\services\Redis;
 use yii\db\ActiveRecord;
 use yii\helpers\Html;
 
@@ -21,11 +22,15 @@ use yii\helpers\Html;
 class Book extends ActiveRecord {
     const APOSTOL_YEAR = 1564;
 
+    private const DELIMITER_AUTHORS = ', ';
+    private const DELIMITER_AUTHORS_RAW = ',';
+
     public $author_ids;
 
     public function rules() {
         return [
             [['title', 'year', 'isbn', 'cover_link', 'author_ids'], 'required'],
+            [['year'], 'integer'],
             ['year', 'validateYear'],
             ['author_ids', 'validateAuthors'],
         ];
@@ -51,15 +56,52 @@ class Book extends ActiveRecord {
     public function afterSave($insert, $changedAttributes) {
         parent::afterSave($insert, $changedAttributes);
 
-        $this->_linkAuthors();
+        $isTopAlreadyDeleted = false;
+        if ($insert) {
+            Redis::deleteAuthorTop($this->year);
+            Redis::deleteAuthorTop(null);
+            $isTopAlreadyDeleted = true;
+        } elseif (array_key_exists('year', $changedAttributes)) {
+            if ($changedAttributes['year'] !== (int)$this->year) {
+                Redis::deleteAuthorTop($this->year);
+                Redis::deleteAuthorTop(null);
+                Redis::deleteAuthorTop($changedAttributes['year']);
+                $isTopAlreadyDeleted = true;
+            }
+        }
+
+        if ($this->_isAuthorsChanged()) {
+            $this->_linkAuthors();
+            if (! $isTopAlreadyDeleted) {
+                Redis::deleteAuthorTop($this->year);
+                Redis::deleteAuthorTop(null);
+            }
+        }
         NotificationCenter::addNotifications($this);
     }
 
+    public function beforeDelete() {
+        Redis::deleteAuthorTop($this->year);
+        Redis::deleteAuthorTop(null);
+        return parent::beforeDelete();
+    }
+
+    private function _isAuthorsChanged() {
+        $rawNewAuthorIds = explode(self::DELIMITER_AUTHORS_RAW, $this->author_ids);
+        $newAuthors = Author::findAll(['id' => $rawNewAuthorIds]);
+        $newAuthorIds = array_map(
+            function ($author) {
+                return $author->id;
+            },
+            $newAuthors
+        );
+        return $this->authorIds !== implode(self::DELIMITER_AUTHORS, $newAuthorIds);
+    }
+
     private function _linkAuthors() {
-        //TO_DO refactor without unlinkAll
         $this->_unlinkAuthors();
 
-        $authorIds = explode(',', $this->author_ids);
+        $authorIds = explode(self::DELIMITER_AUTHORS_RAW, $this->author_ids);
         $authors = Author::findAll(['id' => $authorIds]);
         foreach($authors as $author) {
             $this->link('authors', $author);
@@ -84,7 +126,7 @@ class Book extends ActiveRecord {
             },
             $this->authors
         );
-        return implode(', ', $authorIds);
+        return implode(self::DELIMITER_AUTHORS, $authorIds);
     }
 
     public function getAuthorFios(): string {
@@ -94,7 +136,7 @@ class Book extends ActiveRecord {
             },
             $this->authors
         );
-        return implode(', ', $authorFios);
+        return implode(self::DELIMITER_AUTHORS, $authorFios);
     }
 
     public function getAuthorLinks(): string {
@@ -104,6 +146,6 @@ class Book extends ActiveRecord {
             },
             $this->authors
         );
-        return implode(', ', $authorLinks);
+        return implode(self::DELIMITER_AUTHORS, $authorLinks);
     }
 }
